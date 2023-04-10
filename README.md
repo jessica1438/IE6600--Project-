@@ -1,78 +1,22 @@
+Global Mortality Visualization Application using R
+Database: https://www.who.int/data/data-collection-tools/who-mortality-database
+Rshiny Application link: 
+This Project utilizes the WHO Mortality database “https://www.who.int/data/data-collection-tools/who-mortality-database” provided by the World Health Organization to generate user-friendly plots that aid in understanding the gravity of the subject matter. By analyzing the changing proportions of causes of death and the number of deaths in various regions, our project aims to provide people with a better understanding of global health status and the challenges faced by humanity worldwide. We hope that this project will inspire individuals to pay closer attention to their health by comprehending the causes of high death rates across different ages, genders, and regions.
+This repository contains the following folders: 
+1) shinyApp 
+2) slides 
+The shinyApp folder contains the ui.r, server.r and global.r files which is the user interface code, server code and the global code which contains the libraries we have used. It also contains a www folder which is segregated into 3 folders namely: figures, functions and the raw data folder which contains the images, functions such as histogram, line plots, etc and raw data with documentation that we have utilized respectively to implement the Application.
 
-# Final Projects
-
-## Overview
-
-The purpose of the project is to apply the knowledge learned in the class to real-world problems. Projects will help students gain working experience in data visualization, data processing, data exploration, and development of a web app, here we use R and RShiny to approach such goals. 
-
-## Directory Tree
-```R
-IE6600-final-project
-|   README.md # you may have your project introduction here
-|   project_guideline.pdf
-|
-+---shinyApp
-|   |   global.R # global settings
-|   |   server.R # server
-|   |   ui.R # ui
-|   |   
-|   \---www
-|       +---figures # put your figures here if necessary
-|       \---functions # put your created functions 
-\---slides # you may store your presentation materials here
-```
-
-## Getting Started
-
->If you are new to git and github, please watch the video tutorial below first: [Git and GitHub for Beginners Tutorial](https://www.youtube.com/watch?v=tRZGeaHPoaw) by Kevin Stratvert
-
-> git cheatsheet: https://education.github.com/git-cheat-sheet-education.pdf \
-> git overview book: https://git-scm.com/book/en/v2
-
-1. Install [git](https://www.git-scm.com/)
-
-2. Clone this repository to your local directory:
-
-    `git clone https://github.com/zhenyuanlu/IE6600-final-project.git`
-
-3. Go over the project instructions in the pdf:
-
-    <a href="https://github.com/zhenyuanlu/IE6600-final-project/blob/main/project_guideline.pdf" target="_blank">RShiny Project Instruction</a>
-
-4. You can start to develop the web app in the shinyApp folder now.
-
-
-
-## Submit Your Work on Github
-Upon the completion of the RShiny app development, each team member should upload the team project folder to their individual github repo.
-
-Do not include the dataset, just put the dataset link in the README.md. 
-
-## Deploy Your Work on shinyapps.io
-
-1. Register an account at 
-   
-   https://www.shinyapps.io/
-2. Install [rsconnect](https://github.com/rstudio/rsconnect) in RStudio
-
-    `install.packages('rsconnect')`
-
-3. Go to your shinyapps.io dashboard and click on your username on the right top corner. 
-4. Then you will see a dropdown menu with three tabs, `profile`, `tokens`, and `logout`. Click on `tokens`, and you will see the token page. 
-5. `show` your token details, then `show` the secrect code (you may see a code chunk as below). Copy this rsconnect code to your Rstudio commend window. 
-    ```
-    rsconnect::setAccountInfo(name='<username>',
-			  token='<token>',
-			  secret='<secretCode>')
-    ```
-6. Deploy your local RShiny App
-   
-    `rsconnect::deployApp('yourAppDirectory')`
-
-One teammember makes one deployment on the behalf of the whole team.
-
-## Post Your Work Intro on Course Platform
-Finally, follow the project instruction and post a note with the all your members' github links, shinyapps.io demo page, and brief intro on the course platform. 
-
-One teammember makes one submission on the behalf of the whole team.
-
+The process of implementation:
+•	At first, we tidied the data, as there were multiple datasets with different features. We extracted the most prominent features that would yield us the best analysis. 
+•	Once done, we focused on creating the functions of histogram, line plots, radar charts and much more to understand the different trends and insights about mortality around the world. 
+•	We designed an interactive UI that will allow users to select age group, gender, cause of death and year in order to visualize the trends.
+•	We added a few more unique features here and there such as pop-up ads, tour of the app and adding few images to the application. 
+•	Finally, we ran all the global.r files to debug and execute the R shiny application. 
+Resources used : 
+#https://rstudio.github.io/shinydashboard/get_started.html
+#https://chat.openai.com/chat
+#https://stackoverflow.com/questions/75969716/shiny-app-keep-panels-consistent-in-several-views
+#https://stackoverflow.com/questions/75911344/shinydasboard-with-dynamic-menuitem-from-nestedlist
+#https://rstudio.github.io/shinydashboard/behavior.html
+#https://fontawesome.com/v4/icons/
