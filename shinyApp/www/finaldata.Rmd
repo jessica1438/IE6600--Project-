@@ -1,0 +1,390 @@
+---
+title: "finaldata"
+output: html_document
+date: "2023-04-02"
+---
+
+```{r}
+# run packages
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+```
+
+
+#import all mortlcd data
+```{r}
+Morticd10_part3 <- read_csv("Mortality 2008-2021/Morticd10_part3.csv")
+
+Morticd10_part4 <- read_csv("Mortality 2008-2021/Morticd10_part4.csv")
+
+Morticd10_part5 <- read_csv("Mortality 2008-2021/Morticd10_part5.csv")
+```
+
+#combine all mortlcd data together
+```{r}
+# make the data type of column in different df same.
+Morticd10_part3$List <- as.character(Morticd10_part3$List)
+Morticd10_part4$List <- as.character(Morticd10_part4$List)
+Morticd10_part5$List <- as.character(Morticd10_part5$List)
+
+# create Morticd1950_2021 which can present the mortality between 1950-2021
+Morticd2008_2021<- bind_rows(Morticd10_part3,Morticd10_part4,Morticd10_part5)
+```
+
+#remove the column we dont need
+```{r}
+Morticd2008_2021 <- Morticd2008_2021 %>% 
+  select(-Admin1,-SubDiv,-IM_Frmat,-List)
+```
+
+#deal with missing value in the age distribution
+#we would convert missing value in age distribution to 0, because the total number from data is sum of each age interval without considering the missing value
+```{r}
+# create function to set any missing value to 0 for multiple columns
+NA_to_0 <- function(df, columns) {
+  for (col in columns) {
+    df[,col][is.na(df[,col])] <- 0
+  }
+  return(df)
+}
+
+#set all missing value in age distribution to zero
+Morticd2008_2021 <- NA_to_0(Morticd2008_2021, c("Deaths2","Deaths3","Deaths4","Deaths5","Deaths6","Deaths7",
+                                                "Deaths8","Deaths9","Deaths10","Deaths11","Deaths12","Deaths13",
+                                                "Deaths14","Deaths15","Deaths16","Deaths17","Deaths18"
+                                                ,"Deaths19","Deaths20","Deaths21","Deaths22","Deaths23",
+                                                "Deaths24","Deaths25","Deaths26"))
+
+```
+
+#make the age distribution consistent
+```{r}
+#create death at age 1 to 4
+Morticd2008_2021$Age01_04 <- Morticd2008_2021$Deaths3 + Morticd2008_2021$Deaths4 + Morticd2008_2021$Deaths5 + Morticd2008_2021$Deaths6
+
+#create death at age 5 to 14
+Morticd2008_2021$Age05_14 <- Morticd2008_2021$Deaths7 + Morticd2008_2021$Deaths8
+
+#create death at age 15 to 24
+Morticd2008_2021$Age15_24 <- Morticd2008_2021$Deaths9 + Morticd2008_2021$Deaths10
+
+#create death at age 25 to 34
+Morticd2008_2021$Age25_34 <- Morticd2008_2021$Deaths11 + Morticd2008_2021$Deaths12
+
+#create death at age 35 to 44
+Morticd2008_2021$Age35_44 <- Morticd2008_2021$Deaths13 + Morticd2008_2021$Deaths14
+
+#create death at age 45 to 54
+Morticd2008_2021$Age45_54 <- Morticd2008_2021$Deaths15 + Morticd2008_2021$Deaths16
+
+#create death at age 55 to 64
+Morticd2008_2021$Age55_64 <- Morticd2008_2021$Deaths17 + Morticd2008_2021$Deaths18
+
+#create death at age 65 above
+Morticd2008_2021$Age65above <- Morticd2008_2021$Deaths19 + Morticd2008_2021$Deaths20 + Morticd2008_2021$Deaths21 + Morticd2008_2021$Deaths22 + Morticd2008_2021$Deaths23 +Morticd2008_2021$Deaths2 + Morticd2008_2021$Deaths25 
+
+#create death at unspecified age
+Morticd2008_2021$Unspecified_Age<- Morticd2008_2021$Deaths26
+
+#remove old column of age distribution consistent -IM_Deaths1,-IM_Deaths2,-IM_Deaths3,-IM_Deaths4
+
+Morticd2008_2021 <- Morticd2008_2021 %>%
+  select(-c(Deaths3, Deaths4, Deaths5, Deaths6, Deaths7, Deaths8, Deaths9, Deaths10,
+            Deaths11, Deaths12, Deaths13, Deaths14, Deaths15, Deaths16, Deaths17,
+            Deaths18, Deaths19, Deaths20, Deaths21, Deaths22, Deaths23, Deaths24,
+            Deaths25, Deaths26, IM_Deaths1, IM_Deaths2, IM_Deaths3, IM_Deaths4,Frmat))
+
+# rename column Death1 and Death2 
+
+Morticd2008_2021 <- Morticd2008_2021 %>%
+  rename(Total=Deaths1)
+
+Morticd2008_2021 <- Morticd2008_2021 %>%
+  rename(Age00_01 =Deaths2)
+
+```
+
+#convert country code to country name and Sex
+```{r}
+#import country name and country code data
+country_codes <- read_csv("country code and notes/country_codes.csv")%>%
+  rename(Country = country)
+
+#merge two data frame
+Morticd2008_2021 <- merge(Morticd2008_2021,country_codes,by = "Country", all.x = TRUE)
+
+#convert Sex column
+Morticd2008_2021$Sex <- ifelse(Morticd2008_2021$Sex == 1, "Male", ifelse(Morticd2008_2021$Sex == 2, "Female", "Unspecified"))
+```
+
+#import causes data of all lists
+```{r}
+X101_103_104 <- read_excel("cause/101,103,104.xlsx")
+
+```
+
+#choose the data we need from main data frame
+```{r}
+Morticd2008_2021 <- subset(Morticd2008_2021, !(Cause %in% as.character(1000:2000)))
+
+```
+
+#separate cause data for merge
+```{r}
+# Function to expand code ranges
+expand_codes_df <- function(input_data) {
+  
+  expand_code_ranges <- function(code) {
+    if (grepl("^\\D+$", code)) {
+      return(code)
+    }
+    
+    code_ranges <- strsplit(code, ",")[[1]]
+    expanded_codes <- c()
+    
+    for (code_range in code_ranges) {
+      if (grepl("-", code_range)) {
+        range_limits <- strsplit(code_range, "-")[[1]]
+        prefix <- gsub("\\d", "", range_limits[1])
+        range_limits_numeric <- gsub("\\D", "", range_limits)
+        
+        expanded_range <- seq(as.numeric(range_limits_numeric[1]), as.numeric(range_limits_numeric[2]))
+        expanded_range_prefixed <- paste0(prefix, sprintf("%0*d", nchar(range_limits[1]) - nchar(prefix), expanded_range))
+        
+        expanded_codes <- c(expanded_codes, expanded_range_prefixed)
+      } else {
+        expanded_codes <- c(expanded_codes, code_range)
+      }
+    }
+    
+    return(expanded_codes)
+  }
+  
+  expanded_data <- input_data %>%
+    mutate(expanded_code = lapply(code, expand_code_ranges)) %>%
+    unnest(expanded_code)
+  
+  return(expanded_data)
+}
+
+#separate for each version of cause 
+X101_103_104 <- expand_codes_df(X101_103_104) %>% select(-1)
+
+```
+
+#merge all cause in to main data frame by each list
+```{r}
+
+Morticd2008_2021 <- Morticd2008_2021 %>%
+  rename(expanded_code= Cause)
+
+#merge data
+Morticd2008_2021 <- merge(Morticd2008_2021, X101_103_104, by = "expanded_code",all.x = TRUE)
+
+```
+
+```{r}
+# remove column we dont need in final data frame and change the column order\
+Morticd_final <- Morticd2008_2021  %>% 
+  select(-expanded_code,-Country)%>%
+  rename(Country= name)%>%
+  select(Country,Year,Sex,Cause,Total,Age00_01,Age01_04,Age05_14,Age15_24,Age25_34,Age35_44,
+         Age45_54,Age55_64,Age65above,Unspecified_Age)
+  
+```
+
+```{r}
+Morticd_final <- na.omit(Morticd_final[!is.na(Morticd_final$Cause), ])
+```
+
+```{r}
+Morticd_final <- Morticd_final %>%
+  group_by(Country, Year, Sex, Cause) %>%
+  summarise(
+    Total = sum(Total, na.rm = TRUE),
+    Age00_01 = sum(Age00_01, na.rm = TRUE),
+    Age01_04 = sum(Age01_04, na.rm = TRUE),
+    Age05_14 = sum(Age05_14, na.rm = TRUE),
+    Age15_24 = sum(Age15_24, na.rm = TRUE),
+    Age25_34 = sum(Age25_34, na.rm = TRUE),
+    Age35_44 = sum(Age35_44, na.rm = TRUE),
+    Age45_54 = sum(Age45_54, na.rm = TRUE),
+    Age55_64 = sum(Age55_64, na.rm = TRUE),
+    Age65above = sum(Age65above, na.rm = TRUE),
+    Unspecified_Age = sum(Unspecified_Age, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+#insert all sex data
+```{r}
+aggregated_all_gender <- aggregate(cbind(Total,Age00_01, Age01_04, Age05_14, Age15_24, Age25_34, Age35_44, Age45_54, Age55_64, Age65above, Unspecified_Age) ~ Country + Year + Cause, data = Morticd_final, FUN = sum)
+aggregated_all_gender$Sex <- "All"
+aggregated_all_gender<-aggregated_all_gender %>%
+select(Country,Year,Sex,Cause,Total,Age00_01,Age01_04,Age05_14,Age15_24,Age25_34,Age35_44,
+         Age45_54,Age55_64,Age65above,Unspecified_Age)
+Morticd_final<- rbind(Morticd_final,aggregated_all_gender)
+```
+
+
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+#population data:
+```{r}
+#import pop data
+pop <- read_csv("population and live birth/pop.csv")
+```
+
+#remove the column we dont need
+```{r}
+pop <- pop %>% 
+  select(-Admin1,-SubDiv,-Frmat,-Lb)
+```
+#deal with missing value in the age distribution
+```{r}
+#set all missing value in age distribution to zero
+pop <- NA_to_0(pop, c("Pop2","Pop3","Pop4","Pop5","Pop6","Pop7",
+                                                "Pop8","Pop9","Pop10","Pop11","Pop12","Pop13",
+                                                "Pop14","Pop15","Pop16","Pop17","Pop18"
+                                                ,"Pop19","Pop20","Pop21","Pop22","Pop23",
+                                                "Pop24","Pop25","Pop26"))
+
+```
+
+#make the age distribution consistent
+```{r}
+#create death at age 1 to 4
+pop$Age01_04 <- pop$Pop3 + pop$Pop4 + pop$Pop5 + pop$Pop6
+
+#create death at age 5 to 14
+pop$Age05_14 <- pop$Pop7 + pop$Pop8
+
+#create death at age 15 to 24
+pop$Age15_24 <- pop$Pop9 + pop$Pop10
+
+#create death at age 25 to 34
+pop$Age25_34 <- pop$Pop11 + pop$Pop12
+
+#create death at age 35 to 44
+pop$Age35_44 <- pop$Pop13 + pop$Pop14
+
+#create death at age 45 to 54
+pop$Age45_54 <- pop$Pop15 + pop$Pop16
+
+#create death at age 55 to 64
+pop$Age55_64 <- pop$Pop17 + pop$Pop18
+
+#create death at age 65 above
+pop$Age65above <- pop$Pop19 + pop$Pop20 + pop$Pop21 + pop$Pop22 + pop$Pop23 +pop$Pop2 + pop$Pop25 
+
+#create death at unspecified age
+pop$Unspecified_Age<- pop$Pop26
+
+#remove old column of age distribution consistent
+
+pop <- pop %>%
+  select(-c(Pop3, Pop4, Pop5, Pop6, Pop7, Pop8, Pop9, Pop10,
+            Pop11, Pop12, Pop13, Pop14, Pop15, Pop16, Pop17,
+            Pop18, Pop19, Pop20, Pop21, Pop22, Pop23, Pop24,
+            Pop25, Pop26))
+
+# rename column Death1 and Death2 
+
+pop <- pop %>%
+  rename(Total=Pop1)
+
+pop <- pop %>%
+  rename(Age00_01 =Pop2)
+
+```
+
+#convert country code to country name and Sex
+```{r}
+#import country name and country code data
+country_codes <- read_csv("country code and notes/country_codes.csv")%>%
+  rename(Country = country)
+
+#merge two data frame
+pop <- merge(pop,country_codes,by = "Country", all.x = TRUE)
+
+#convert Sex column
+pop$Sex <- ifelse(pop$Sex == 1, "Male", ifelse(pop$Sex == 2, "Female", "Unspecified"))
+```
+
+```{r}
+#subset year we need
+pop2008_2021 <- subset(pop, Year>=2008 & Year <=2021 )
+```
+
+
+```{r}
+# remove column we dont need in final data frame and change the column order\
+pop_final <- pop2008_2021  %>% 
+  select(-Country)%>%
+  rename(Country= name)%>%
+  select(Country,Year,Sex,Total,Age00_01,Age01_04,Age05_14,Age15_24,Age25_34,Age35_44,
+         Age45_54,Age55_64,Age65above,Unspecified_Age)
+  
+```
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+```{r}
+library(readr)
+Morticd_final <- read_csv("final data/Morticd_final.csv")
+```
+
+```{r}
+pop_final <- read_csv("final data/pop_final.csv")
+```
+
+#create Sex: ALL in population 
+```{r}
+aggregated_all_gender <- aggregate(cbind(Total,Age00_01, Age01_04, Age05_14, Age15_24, Age25_34, Age35_44, Age45_54, Age55_64, Age65above, Unspecified_Age) ~ Country + Year, data = pop_final, FUN = sum)
+aggregated_all_gender$Sex <- "All"
+aggregated_all_gender<-aggregated_all_gender %>%
+select(Country,Year,Sex,Total,Age00_01,Age01_04,Age05_14,Age15_24,Age25_34,Age35_44,
+         Age45_54,Age55_64,Age65above,Unspecified_Age)
+pop_final<- rbind(pop_final,aggregated_all_gender)
+```
+
+#merge two data together
+```{r}
+merged_data <- merge(Morticd_final, pop_final, by = c("Country", "Year", "Sex"), suffixes = c("_mortality", "_population"))
+```
+
+#Calculate the mortality rates for each age group and create the new data frame:
+```{r}
+mortality_rate <- merged_data %>%
+  mutate(
+    Total = Total_mortality / Total_population,
+    Age00_01 = Age00_01_mortality / Age00_01_population,
+    Age01_04 = Age01_04_mortality / Age01_04_population,
+    Age05_14 = Age05_14_mortality / Age05_14_population,
+    Age15_24 = Age15_24_mortality / Age15_24_population,
+    Age25_34 = Age25_34_mortality / Age25_34_population,
+    Age35_44 = Age35_44_mortality / Age35_44_population,
+    Age45_54 = Age45_54_mortality / Age45_54_population,
+    Age55_64 = Age55_64_mortality / Age55_64_population,
+    Age65above = Age65above_mortality / Age65above_population,
+    Unspecified_Age = Unspecified_Age_mortality / Unspecified_Age_population
+  ) %>%
+  select(Country, Year, Sex, Cause, Total, Age00_01, Age01_04,Age05_14,Age15_24,Age25_34,Age35_44,Age45_54,Age55_64,Age65above,Unspecified_Age)
+```
+
+#set NA and inf value as 0
+```{r}
+mortality_rate <- NA_to_0(mortality_rate, c("Unspecified_Age"))
+mortality_rate$Unspecified_Age[is.infinite(mortality_rate$Unspecified_Age)] <- 0
+```
+
+#reshape mortality_rate for plot
+```{r}
+mortality_rate <- gather(mortality_rate, Age_group, mortality_rate, `Total`,`Age00_01`, `Age01_04`, `Age05_14`,`Age15_24`, `Age25_34`, `Age35_44`,`Age45_54`, `Age55_64`, `Age65above`,`Unspecified_Age`)
+```
+
