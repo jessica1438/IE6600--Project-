@@ -2,7 +2,7 @@ Global Mortality Visualization Application using R
 
 Database: https://www.who.int/data/data-collection-tools/who-mortality-database
 
-Rshiny Application link: 
+Rshiny Application link: https://bksfmd-du-hui.shinyapps.io/shinyApp/
 
 This Project utilizes the WHO Mortality database “https://www.who.int/data/data-collection-tools/who-mortality-database” provided by the World Health Organization to generate user-friendly plots that aid in understanding the gravity of the subject matter. By analyzing the changing proportions of causes of death and the number of deaths in various regions, our project aims to provide people with a better understanding of global health status and the challenges faced by humanity worldwide. We hope that this project will inspire individuals to pay closer attention to their health by comprehending the causes of high death rates across different ages, genders, and regions.
 
