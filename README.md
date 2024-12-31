@@ -1,4 +1,5 @@
-Global Mortality Visualization Application using R
+# Global Mortality Visualization Application using R
+A Global Mortality Visualization Application developed in R Shiny that leverages the WHO Mortality Database to create interactive visualizations, enabling users to analyze mortality trends by age, gender, region, and cause of death. This project aims to enhance understanding of global health challenges through user-friendly insights and dynamic data exploration.
 
 Database: https://www.who.int/data/data-collection-tools/who-mortality-database
 
